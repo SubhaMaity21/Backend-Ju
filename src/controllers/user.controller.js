@@ -49,12 +49,7 @@ const registerUser = asyncHandler(async (req, res,next) => {
   }
 
   // Upload them to Cloudinary
-  if (req.files?.avatar?.[0]?.buffer) {
-    avatar = await uploadBufferToCloudinary(req.files.avatar[0].buffer);
-  } else {
-    // Handle file path upload (for local dev)
-    avatar = await uploadOnCloudinary(avatarLocalPath);
-  }
+  const avatar = await uploadOnCloudinary(avatarLocalPath);
   const coverImage = await uploadOnCloudinary(coverImageLocalPath);
 
   if (!avatar) {
