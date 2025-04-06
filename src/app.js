@@ -1,7 +1,8 @@
+import { ensureDirectoriesExist } from "./utils/fileSystem.js";
 import express, { urlencoded } from "express"
 import cors from "cors"
 import cookieParser from "cookie-parser"
-
+ensureDirectoriesExist();
 const app = express()
 app.use(cors({
     origin:process.env.CORS_ORIGIN,
