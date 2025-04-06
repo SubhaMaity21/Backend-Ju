@@ -1,71 +1,50 @@
-import { v2 as cloudinary } from 'cloudinary';
-import fs from "fs"
-import { ApiError } from './ApiError.js';
+import { v2 as cloudinary } from "cloudinary";
+import { Readable } from "stream";
 
+cloudinary.config({
+  cloud_name: process.env.CLOUDINARY_CLOUD_NAME,
+  api_key: process.env.CLOUDINARY_API_KEY,
+  api_secret: process.env.CLOUDINARY_API_SECRET,
+});
 
+// Function to handle file buffer upload (for serverless)
+export const uploadBufferToCloudinary = async (fileBuffer, folder = "uploads") => {
+  try {
+    if (!fileBuffer) return null;
 
-
-    // Configuration
-    cloudinary.config({ 
-        cloud_name: process.env.CLOUDINARY_CLOUD_NAME, 
-        api_key: process.env.CLOUDINARY_API_KEY, 
-        api_secret: process.env.CLOUDINARY_API_SECRET 
-    })
-
-
-    const uploadOnCloudinary = async (localFilePath) =>{
-       try {
-            if(!localFilePath) return null
-        const response = await  cloudinary.uploader.upload(localFilePath,{
-                resource_type:"auto"
-            })
-            fs.unlinkSync(localFilePath) // remove the locally stored file
-            return response
-            
-        } catch (error) {
-            fs.unlinkSync(localFilePath) // remove the locally stored file
-            return null
+    return new Promise((resolve, reject) => {
+      const uploadStream = cloudinary.uploader.upload_stream(
+        { folder },
+        (error, result) => {
+          if (error) reject(error);
+          else resolve(result);
         }
-      
-    }
+      );
 
+      // Create a readable stream from buffer and pipe to cloudinary
+      const stream = Readable.from(fileBuffer);
+      stream.pipe(uploadStream);
+    });
+  } catch (error) {
+    console.error("Error uploading to cloudinary:", error);
+    return null;
+  }
+};
 
-    const deleteFromCloudinary = async(publicId)=>{
-        try {
-            if(!publicId) return null
-            const result = await cloudinary.uploader.destroy(publicId)
-            return result
-        } catch (error) {
-            throw new ApiError(500,error.message)
-        }
-    }
-
-
-
-
-    const extractPublicId = (url)=>{
-        if(!url){
-            return null
-        }
-
-        try {
-              
-    const urlParts = url.split('/');
-    const fileNameWithExtension = urlParts[urlParts.length - 1];
-    const publicId = fileNameWithExtension.split('.')[0];
-    
-    // If the file is in a folder, include the folder path
-    const uploadIndex = urlParts.indexOf('upload');
-    if (uploadIndex !== -1 && uploadIndex < urlParts.length - 2) {
-      const pathParts = urlParts.slice(uploadIndex + 2);
-      return pathParts.join('/').split('.')[0]; 
-    }
-    
-    return publicId;
-        } catch (error) {
-            throw new ApiError(500,error.message)
-        }
-    }
-
-
-    export {uploadOnCloudinary,deleteFromCloudinary,extractPublicId}
+// Maintain existing function for local development
+export const uploadOnCloudinary = async (localFilePath) => {
+  try {
+    if (!localFilePath) return null;
+    // Upload the file on cloudinary
+    const response = await cloudinary.uploader.upload(localFilePath, {
+      resource_type: "auto",
+    });
+    // File has been uploaded successfully
+    console.log("File uploaded on cloudinary ", response.url);
+    return response;
+  } catch (error) {
+    // Remove the locally saved temporary file as the upload operation got failed
+    fs.unlinkSync(localFilePath);
+    return null;
+  }
+};
