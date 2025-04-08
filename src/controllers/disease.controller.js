@@ -8,7 +8,7 @@ import { OpenAI } from "openai";
 
 const client = new OpenAI({
 	baseURL: "https://router.huggingface.co/novita/v3/openai",
-	apiKey: "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",
+	apiKey: process.env.HUGGINGFACE_SECRET,
 });
 
 const createCrop = asyncHandler(async (req, res) => {
