@@ -11,7 +11,7 @@ router.use(verifyJWT);
 // Route for creating a new crop with image upload
 router.post(
   "/create", 
-  upload.single("cropImage"), 
+  upload.single("image"), 
   createCrop
 );
 

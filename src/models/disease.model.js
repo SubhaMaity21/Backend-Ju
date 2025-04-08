@@ -2,7 +2,7 @@ import mongoose , {Schema} from "mongoose"
 
 const diseaseSchema = new Schema({
   
-    description:{
+    diseaseIdentified:{
         type:String,
         required:true,
         trim:true,
